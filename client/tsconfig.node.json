@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2020",
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": ["*.config.ts", "vite.config.ts"],
+  "exclude": ["dist", "node_modules", "src"]
+}
