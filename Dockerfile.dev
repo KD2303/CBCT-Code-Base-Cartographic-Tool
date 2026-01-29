@@ -1,0 +1,33 @@
+# Development Dockerfile with hot reload support
+FROM node:20-alpine
+
+# Install git for repository cloning
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Copy root package files
+COPY package*.json ./
+
+# Copy client package files
+COPY client/package*.json ./client/
+
+# Copy server package files
+COPY server/package*.json ./server/
+
+# Install all dependencies
+RUN npm install
+RUN cd client && npm install
+RUN cd server && npm install
+
+# Copy source files
+COPY . .
+
+# Create clone directory
+RUN mkdir -p /tmp/cbct-clones
+
+# Expose ports for client and server
+EXPOSE 3000 5000
+
+# Default command
+CMD ["npm", "run", "dev"]

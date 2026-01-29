@@ -12,8 +12,18 @@
     "dev:server": "npm run dev --workspace=server",
     "dev:client": "npm run dev --workspace=client",
     "build": "npm run build --workspace=client && npm run build --workspace=server",
+    "build:client": "npm run build --workspace=client",
     "start": "npm run start --workspace=server",
-    "install:all": "npm install"
+    "install:all": "npm install",
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "npm run test --workspace=server",
+    "test:client": "npm run test --workspace=client",
+    "test:coverage": "npm run test:coverage --workspace=server && npm run test:coverage --workspace=client",
+    "lint": "npm run lint --workspace=client",
+    "docker:build": "docker build -t cbct .",
+    "docker:run": "docker run -p 5000:5000 cbct",
+    "docker:compose": "docker-compose up",
+    "docker:compose:dev": "docker-compose --profile dev up"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

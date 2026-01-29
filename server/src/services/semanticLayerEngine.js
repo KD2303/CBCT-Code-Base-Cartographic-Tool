@@ -543,6 +543,8 @@ function processForSemanticLayers(rawNodes, rawEdges, fileCount) {
 
     // Metadata (internal - used by client for layer transitions)
     metadata: {
+      sizeCategory,
+      totalFiles: fileCount,
       totalUnits,
       visibleUnits: unitsWithSummaries.length,
       revealDepth,
@@ -564,10 +566,40 @@ module.exports = {
   getRevealDepth,
   selectUnits,
   expandUnit,
+  expandUnitToChildren: expandUnit, // Alias for backwards compatibility
   getImpactChain,
   generateUnitSummary,
   applySafetyLimits,
   processForSemanticLayers,
+  calculateRiskIndicators: (nodes, edges) => {
+    // Calculate risk indicators for nodes
+    return nodes.map(node => {
+      const inDegree = node.inDegree || 0;
+      const outDegree = node.outDegree || 0;
+      const riskIndicators = [];
+      
+      // High impact: nodes that many others depend on
+      if (inDegree >= 5) {
+        riskIndicators.push({ type: 'high-impact', severity: inDegree >= 10 ? 'high' : 'medium' });
+      }
+      
+      // High dependency: nodes that depend on many others
+      if (outDegree >= 8) {
+        riskIndicators.push({ type: 'high-dependency', severity: 'medium' });
+      }
+      
+      return { ...node, riskIndicators };
+    });
+  },
+  getLayerConfiguration: (layer) => {
+    const configs = {
+      1: { name: 'Orientation', showNodes: 'units', showEdges: 'inter-unit', description: 'High-level overview' },
+      2: { name: 'Structural', showNodes: 'expanded', showEdges: 'all', description: 'Connections and relationships' },
+      3: { name: 'Impact', showNodes: 'all', showEdges: 'impact-chains', description: 'Dependency chains and risk' },
+      4: { name: 'Detail', showNodes: 'files', showEdges: 'all', description: 'Full file-level analysis' },
+    };
+    return configs[layer] || configs[1];
+  },
 
   // Constants exported for testing
   SMALL_REPO_THRESHOLD,
@@ -576,3 +608,4 @@ module.exports = {
   MAX_VISIBLE_NODES,
   MAX_DETAIL_NODES
 };
+
