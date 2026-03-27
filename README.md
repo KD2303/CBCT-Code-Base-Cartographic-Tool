@@ -119,34 +119,62 @@ https://github.com/vuejs/vue/tree/main/src
 
 ```
 cbct/
-├── 📁 client/                  # React frontend (Vite + TailwindCSS)
+├── 📁 client/                          # React frontend (Vite + TailwindCSS)
 │   ├── src/
-│   │   ├── components/         # UI components
-│   │   │   ├── GraphCanvas.jsx # Main visualization
-│   │   │   ├── Sidebar.jsx     # Navigation panel
+│   │   ├── components/                 # UI components
+│   │   │   ├── GraphCanvas.jsx         # Main visualization
+│   │   │   ├── Sidebar.jsx             # Navigation panel
 │   │   │   └── ErrorBoundary.jsx
-│   │   ├── services/           # API client
-│   │   ├── store/              # Zustand state management
-│   │   └── __tests__/          # Unit tests (Vitest)
+│   │   ├── services/                   # API client
+│   │   ├── store/                      # Zustand state management
+│   │   ├── public/                     # Public API exports
+│   │   └── __tests__/                  # Unit tests (Vitest)
 │   └── package.json
 │
-├── 📁 server/                  # Node.js backend (Express)
+├── 📁 server/                          # Node.js backend (Express)
 │   ├── src/
-│   │   ├── routes/             # API endpoints
-│   │   │   ├── analysis.js     # Dependency analysis
-│   │   │   ├── repository.js   # Repo scanning & cloning
-│   │   │   └── graph.js        # Graph operations
-│   │   ├── services/           # Business logic
+│   │   ├── routes/                     # API endpoints
+│   │   │   ├── analysis.js             # Dependency analysis
+│   │   │   ├── repository.js           # Repo scanning & cloning
+│   │   │   └── graph.js                # Graph operations
+│   │   ├── services/                   # Business logic
 │   │   │   ├── analysisService.js
 │   │   │   ├── repositoryService.js
-│   │   │   └── semanticLayerEngine.js
-│   │   └── __tests__/          # Unit tests (Jest)
+│   │   │   ├── semanticLayerEngine.js
+│   │   │   ├── cacheService.js         # Redis cache layer
+│   │   │   └── globalDependencyGraph.js
+│   │   ├── utils/                      # Utilities
+│   │   │   └── redisClient.js          # Redis connection
+│   │   └── __tests__/                  # Unit tests (Jest)
 │   └── package.json
 │
-├── 📄 Dockerfile               # Production container
-├── 📄 docker-compose.yml       # Container orchestration
-├── 📄 .env.example             # Environment template
-└── 📄 package.json             # Workspace root
+├── 📁 docker/                          # Docker configuration
+│   ├── Dockerfile                      # Production container
+│   ├── Dockerfile.dev                  # Development container
+│   ├── docker-compose.yml              # Container orchestration
+│   └── README.md                       # Docker usage guide
+│
+├── 📁 Guides/                          # Documentation hub
+│   └── Navigations/                    # All documentation guides
+│       ├── INDEX.md                    # Documentation index
+│       ├── QUICK_START.md              # Getting started
+│       ├── ARCHITECTURE.md             # System architecture
+│       ├── TECHNICAL_ARCHITECTURE.md   # Technical deep dive
+│       ├── SEMANTIC_LAYER_GUIDE.md     # Semantic layer details
+│       ├── DEVELOPMENT.md              # Development setup
+│       ├── INTEGRATION_CONTRACT.md     # Public API contract
+│       ├── INTEGRATION_PATTERNS.md     # Integration examples
+│       ├── FORWARD_COMPATIBILITY_ASSESSMENT.md
+│       ├── REDIS_INTEGRATION.md        # Redis caching guide
+│       ├── DEPLOYMENT_GUIDE.md         # Deploy to Upstash+Render+Vercel
+│       ├── DEPLOYMENT_CHECKLIST.md     # Deployment verification
+│       ├── DEPLOYMENT_QUICK_REFERENCE.md
+│       └── DEPLOYMENT_FILES_SUMMARY.md
+│
+├── 📄 README.md                        # This file
+├── 📄 package.json                     # Workspace root
+├── 📄 .env.example                     # Environment template
+└── 📄 verify-deployment.js             # Deployment verification script
 ```
 
 ---
@@ -193,13 +221,14 @@ Tests cover:
 ### Option 1: Docker (Recommended)
 
 ```bash
-# Build and run with Docker
-npm run docker:build
-npm run docker:run
+# Run production container
+docker-compose -f docker/docker-compose.yml up
 
-# Or use Docker Compose
-npm run docker:compose
+# Run development container with hot reload
+docker-compose -f docker/docker-compose.yml --profile dev up
 ```
+
+📖 See [docker/README.md](./docker/README.md) for detailed Docker instructions.
 
 ### Option 2: Manual Deployment
 
@@ -211,12 +240,16 @@ npm run build:client
 NODE_ENV=production npm start
 ```
 
-### Option 3: Docker Compose (Development)
+### Option 3: Cloud Deployment (Upstash + Render + Vercel)
+
+Deploy with Redis caching on production platforms:
 
 ```bash
-# Start with hot reload
-npm run docker:compose:dev
+# Run verification script
+node verify-deployment.js
 ```
+
+📖 See [Guides/Navigations/DEPLOYMENT_GUIDE.md](./Guides/Navigations/DEPLOYMENT_GUIDE.md) for complete setup instructions.
 
 ### Environment Variables
 
@@ -276,11 +309,13 @@ CLONE_TIMEOUT_MS=600000
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start both servers with hot reload |
-| `npm run dev:client` | Start frontend only |
-| `npm run dev:server` | Start backend only |
+| `npm run dev:client` | Start frontend only (port 5173) |
+| `npm run dev:server` | Start backend only (port 5000) |
 | `npm run build` | Build for production |
 | `npm test` | Run all tests |
 | `npm run test:coverage` | Generate coverage report |
+
+📖 See [Guides/Navigations/DEVELOPMENT.md](./Guides/Navigations/DEVELOPMENT.md) for full development setup.
 
 ### Tech Stack
 
@@ -301,11 +336,22 @@ CLONE_TIMEOUT_MS=600000
 
 ## 📚 Documentation
 
+All documentation is organized in `Guides/Navigations/` folder. Start with the **[INDEX.md](./Guides/Navigations/INDEX.md)** for complete navigation.
+
+### Key Guides
+
 | Document | Description |
 |----------|-------------|
-| [SEMANTIC_LAYER_GUIDE.md](./SEMANTIC_LAYER_GUIDE.md) | Detailed semantic layer documentation |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Technical architecture overview |
-| [DEVELOPMENT.md](./DEVELOPMENT.md) | Development setup guide |
+| [QUICK_START.md](./Guides/Navigations/QUICK_START.md) | Get up and running quickly |
+| [ARCHITECTURE.md](./Guides/Navigations/ARCHITECTURE.md) | System architecture overview |
+| [TECHNICAL_ARCHITECTURE.md](./Guides/Navigations/TECHNICAL_ARCHITECTURE.md) | Deep technical dive |
+| [SEMANTIC_LAYER_GUIDE.md](./Guides/Navigations/SEMANTIC_LAYER_GUIDE.md) | Semantic layer details |
+| [DEVELOPMENT.md](./Guides/Navigations/DEVELOPMENT.md) | Development environment setup |
+| [INTEGRATION_CONTRACT.md](./Guides/Navigations/INTEGRATION_CONTRACT.md) | Public API contract |
+| [DEPLOYMENT_GUIDE.md](./Guides/Navigations/DEPLOYMENT_GUIDE.md) | Deploy to Upstash + Render + Vercel |
+| [REDIS_INTEGRATION.md](./Guides/Navigations/REDIS_INTEGRATION.md) | Redis caching setup |
+
+**👉 [View all guides →](./Guides/Navigations/INDEX.md)**
 
 ---
 
