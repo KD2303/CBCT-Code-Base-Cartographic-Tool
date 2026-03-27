@@ -3,6 +3,7 @@ const cors = require('cors');
 const repositoryRoutes = require('./routes/repository');
 const analysisRoutes = require('./routes/analysis');
 const graphRoutes = require('./routes/graph');
+const { initRedis, isRedisConnected } = require('./utils/redisClient');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,12 +36,20 @@ app.use('/api/graph', graphRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'CBCT Server is running' });
+  res.json({ 
+    status: 'ok', 
+    message: 'CBCT Server is running',
+    cache: isRedisConnected() ? 'connected' : 'disconnected'
+  });
 });
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`🗺️  CBCT Server running on port ${PORT}`);
   console.log(`   Health check: http://localhost:${PORT}/api/health`);
+  
+  // Initialize Redis cache layer
+  console.log('[Server] Initializing cache layer...');
+  await initRedis();
 });
 
 // Increase server timeouts significantly for large repository analysis

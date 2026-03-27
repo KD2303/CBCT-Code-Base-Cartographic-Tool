@@ -1,10 +1,16 @@
 import axios from 'axios';
 
-// Use VITE_API_URL env var first, then Render backend in production, local proxy in development
+/**
+ * API Configuration
+ * Priority:
+ * 1. VITE_API_URL environment variable (set in Vercel)
+ * 2. Local development proxy (/api)
+ * 3. Remote Render backend (production fallback)
+ * 
+ * Example VITE_API_URL: https://cbct-backend-xxxxx.onrender.com/api
+ */
 const BASE_URL = import.meta.env.VITE_API_URL
-  || (import.meta.env.PROD
-    ? 'https://cbct-code-base-cartographic-tool.onrender.com/api'
-    : '/api');
+  || (import.meta.env.DEV ? '/api' : 'https://cbct-code-base-cartographic-tool.onrender.com/api');
 
 const client = axios.create({
   baseURL: BASE_URL,

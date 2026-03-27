@@ -939,7 +939,7 @@ const DetailedNodeTooltip = ({ node, onInspectInternals, onTraceImpact }) => {
 export default function GraphCanvas() {
   const containerRef = useRef(null);
   const {
-    semanticLayer, setSemanticLayer, unlockLayer, updateLayerFromZoom, focusUnit,
+    semanticLayer, setSemanticLayer, unlockLayer, updateLayerFromZoom, focusUnit, restorePreviousState,
     graphData, complexityData, centralityData, filters, viewMode,
     selectedNode, setSelectedNode, toggleMultiSelect, multiSelectNodes, activePath,
     gitChurnData, prChangedFiles, forbiddenLinks, toggleForbiddenLink

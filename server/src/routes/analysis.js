@@ -10,6 +10,11 @@ const {
   analyzeGitChurn,
   analyzePRImpact
 } = require('../services/analysisService');
+const {
+  getCache,
+  setCache,
+  invalidateCache
+} = require('../services/cacheService');
 
 // POST /api/analysis/dependencies - Analyze file dependencies
 router.post('/dependencies', async (req, res) => {
@@ -22,6 +27,12 @@ router.post('/dependencies', async (req, res) => {
       return res.status(400).json({ error: 'Repository path is required' });
     }
 
+    // Check cache first
+    const cached = await getCache(path, 'analysis');
+    if (cached) {
+      return res.json(cached);
+    }
+
     const dependencies = await analyzeDependencies(path, language || 'javascript');
     // If analysis service returned an error object, surface it as 400 when it's a path/validation issue
     if (dependencies && dependencies.error && /path does not exist|not a directory|Repository path is required/i.test(dependencies.error)) {
@@ -30,6 +41,10 @@ router.post('/dependencies', async (req, res) => {
     }
 
     console.log('[Analysis] Success - Nodes:', dependencies.nodes?.length, 'Edges:', dependencies.edges?.length);
+    
+    // Store in cache (3600 second TTL = 1 hour)
+    await setCache(path, dependencies, 'analysis', 3600);
+
     res.json(dependencies);
   } catch (error) {
     // If validation-like error, return 400 to client for clearer feedback
@@ -52,7 +67,17 @@ router.post('/complexity', async (req, res) => {
       return res.status(400).json({ error: 'Repository path is required' });
     }
 
+    // Check cache first
+    const cached = await getCache(path, 'complexity');
+    if (cached) {
+      return res.json(cached);
+    }
+
     const complexity = await analyzeComplexity(path);
+    
+    // Store in cache (3600 second TTL = 1 hour)
+    await setCache(path, complexity, 'complexity', 3600);
+
     res.json(complexity);
   } catch (error) {
     console.error('Error analyzing complexity:', error);
@@ -69,7 +94,17 @@ router.post('/centrality', async (req, res) => {
       return res.status(400).json({ error: 'Repository path is required' });
     }
 
+    // Check cache first
+    const cached = await getCache(path, 'centrality');
+    if (cached) {
+      return res.json(cached);
+    }
+
     const centrality = await analyzeCentrality(path);
+    
+    // Store in cache (3600 second TTL = 1 hour)
+    await setCache(path, centrality, 'centrality', 3600);
+
     res.json(centrality);
   } catch (error) {
     console.error('Error analyzing centrality:', error);
@@ -130,7 +165,18 @@ router.post('/git/churn', async (req, res) => {
   try {
     const { path } = req.body;
     if (!path) return res.status(400).json({ error: 'Repository path is required' });
+    
+    // Check cache first
+    const cached = await getCache(path, 'git-churn');
+    if (cached) {
+      return res.json(cached);
+    }
+
     const churn = await analyzeGitChurn(path);
+    
+    // Store in cache (1800 second TTL = 30 minutes, git data changes more often)
+    await setCache(path, churn, 'git-churn', 1800);
+
     res.json(churn);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -142,7 +188,18 @@ router.post('/git/impact', async (req, res) => {
   try {
     const { path, baseBranch } = req.body;
     if (!path) return res.status(400).json({ error: 'Repository path is required' });
+    
+    // Check cache first
+    const cached = await getCache(path, 'git-impact');
+    if (cached) {
+      return res.json(cached);
+    }
+
     const changedFiles = await analyzePRImpact(path, baseBranch || 'main');
+    
+    // Store in cache (300 second TTL = 5 minutes, PR data is very dynamic)
+    await setCache(path, changedFiles, 'git-impact', 300);
+
     res.json(changedFiles);
   } catch (error) {
     res.status(500).json({ error: error.message });
