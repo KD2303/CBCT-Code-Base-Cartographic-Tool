@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { api } from '../services/api';
 
 export const useStore = create((set, get) => ({
+  // Launch mode (public API)
+  mode: 'standalone',        // 'standalone' | 'embedded'
+
   // Repository state
   repositoryPath: null,      // Original input (URL or local path)
   effectivePath: null,       // Actual local path for analysis (clonePath for GitHub, same as repositoryPath for local)
@@ -485,6 +488,37 @@ export const useStore = create((set, get) => ({
     });
   },
 
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
+
+  // Public API Actions (launch.js)
+  setMode: (mode) => {
+    if (mode === 'standalone' || mode === 'embedded') {
+      set({ mode });
+    }
+  },
+
+  bootstrap: (data) => {
+    // Load pre-computed graph data without triggering API analysis
+    if (data.graph) {
+      const revealDepth = data.metadata?.revealDepth || 3;
+      set({
+        graphData: data.graph,
+        semanticLayer: {
+          currentLayer: 1,
+          focusedUnit: null,
+          expandedUnits: [],
+          previousState: null,
+          revealDepth,
+          isLayerLocked: false
+        }
+      });
+    }
+    if (data.metrics) {
+      set({
+        complexityData: data.metrics.complexity || null,
+        centralityData: data.metrics.centrality || null
+      });
+    }
+  }
 }));
 

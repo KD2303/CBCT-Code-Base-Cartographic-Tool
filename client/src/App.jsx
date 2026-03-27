@@ -12,7 +12,7 @@ import BackgroundAnimation from './components/ui/BackgroundAnimation';
 import { Menu, X } from 'lucide-react';
 
 function App() {
-  const { repositoryPath, isLoading, graphData, error } = useStore();
+  const { repositoryPath, isLoading, graphData, error, mode } = useStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -24,7 +24,16 @@ function App() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const showWelcome = !repositoryPath && !isLoading;
+  // Auto-trigger analysis in embedded mode when repo path is set but graph not loaded
+  useEffect(() => {
+    if (mode === 'embedded' && repositoryPath && !graphData && !isLoading && !error) {
+      const { setRepositoryPath } = useStore.getState();
+      setRepositoryPath(repositoryPath);
+    }
+  }, [mode, repositoryPath, graphData, isLoading, error]);
+
+  // Only show welcome in standalone mode when no repo is loaded
+  const showWelcome = !repositoryPath && !isLoading && mode === 'standalone';
   const showGraph = repositoryPath && graphData && !error;
   const showError = error && !isLoading;
 
