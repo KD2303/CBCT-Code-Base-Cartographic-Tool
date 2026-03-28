@@ -3,7 +3,9 @@ const cors = require('cors');
 const repositoryRoutes = require('./routes/repository');
 const analysisRoutes = require('./routes/analysis');
 const graphRoutes = require('./routes/graph');
+const uploadRoutes = require('./routes/upload');
 const { initRedis, isRedisConnected } = require('./utils/redisClient');
+const { initCloudinary } = require('./config/cloudinary');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +35,7 @@ app.use((err, req, res, next) => {
 app.use('/api/repository', repositoryRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/graph', graphRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -46,6 +49,10 @@ app.get('/api/health', (req, res) => {
 const server = app.listen(PORT, () => {
   console.log(`🗺️  CBCT Server running on port ${PORT}`);
   console.log(`   Health check: http://localhost:${PORT}/api/health`);
+  
+  // Initialize Cloudinary for SVG uploads
+  console.log('[Server] Initializing Cloudinary...');
+  initCloudinary();
   
   // Initialize Redis cache layer asynchronously (non-blocking)
   console.log('[Server] Initializing cache layer...');
