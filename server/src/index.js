@@ -43,13 +43,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-const server = app.listen(PORT, async () => {
+const server = app.listen(PORT, () => {
   console.log(`🗺️  CBCT Server running on port ${PORT}`);
   console.log(`   Health check: http://localhost:${PORT}/api/health`);
   
-  // Initialize Redis cache layer
+  // Initialize Redis cache layer asynchronously (non-blocking)
   console.log('[Server] Initializing cache layer...');
-  await initRedis();
+  initRedis().catch(err => {
+    console.warn('[Server] Warning during Redis init:', err?.message);
+  });
 });
 
 // Increase server timeouts significantly for large repository analysis

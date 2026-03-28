@@ -11,45 +11,65 @@ const redis = require('redis');
 
 let redisClient = null;
 let isConnected = false;
+let connectionAttempted = false; // Track if we've already tried to connect
 
 /**
  * Initialize and return Redis client
- * Gracefully handles connection failures
+ * Gracefully handles connection failures - app continues without cache if Redis unavailable
  * 
  * Supports:
  * - Local: redis://localhost:6379
  * - Upstash: rediss://default:password@host:port (TLS enabled)
  * - Custom: Via REDIS_URL environment variable
+ * - Disabled: If no REDIS_URL set and not in development
  */
 async function initRedis() {
-  if (redisClient && isConnected) {
-    return redisClient;
+  if (connectionAttempted) {
+    return redisClient; // Already tried to connect, don't retry
   }
+  
+  connectionAttempted = true;
 
   try {
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const redisUrl = process.env.REDIS_URL;
+    
+    if (!redisUrl) {
+      console.warn('[Redis] REDIS_URL environment variable not set');
+      console.warn('[Redis] Cache layer disabled - continuing without caching');
+      console.warn('[Redis] To enable Redis, set REDIS_URL=rediss://default:password@host:port');
+      return null;
+    }
+
     const isUpstash = redisUrl.startsWith('rediss://');
     
     console.log('[Redis] Initializing client...');
-    console.log('[Redis] URL format:', isUpstash ? 'rediss:// (TLS)' : 'redis://');
+    console.log('[Redis] URL format:', isUpstash ? 'rediss:// (TLS/Upstash)' : 'redis://');
     
     redisClient = redis.createClient({
       url: redisUrl,
       socket: {
         reconnectStrategy: (retries) => {
-          // Only log every 10 retries to avoid log spam
-          if (retries % 10 === 0) {
+          if (retries > 20) {
+            console.error('[Redis] Max reconnection attempts reached. Giving up.');
+            return new Error('Max reconnection attempts');
+          }
+          if (retries % 5 === 0) {
             console.log(`[Redis] Reconnect attempt ${retries}...`);
           }
-          return Math.min(retries * 50, 5000); // Max 5s between attempts
+          return Math.min(retries * 100, 3000);
         },
         connectTimeout: 15000,
         tls: isUpstash // Enable TLS for Upstash (rediss:// protocol)
       }
     });
 
+    let errorLogged = false;
     redisClient.on('error', (err) => {
-      console.warn('[Redis] Connection error:', err.code || err.name, '-', err.message);
+      if (!errorLogged) {
+        console.warn(`[Redis] Connection failed: ${err.code || err.name} - ${err.message}`);
+        console.warn('[Redis] Check that REDIS_URL is correct and the Redis server is accessible');
+        errorLogged = true;
+      }
     });
 
     redisClient.on('connect', () => {
@@ -62,15 +82,25 @@ async function initRedis() {
       isConnected = true;
     });
 
-    await redisClient.connect();
-    isConnected = true;
-    console.log('[Redis] Client initialized and connected');
+    // Try to connect with timeout
+    const connectPromise = redisClient.connect();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Connection timeout')), 10000)
+    );
 
-    return redisClient;
+    try {
+      await Promise.race([connectPromise, timeoutPromise]);
+      isConnected = true;
+      console.log('[Redis] Client initialized and connected');
+      return redisClient;
+    } catch (timeoutErr) {
+      console.warn('[Redis] Connection timeout - cache layer will be unavailable');
+      console.warn('[Redis] Continuing without caching - analysis will run without cache optimization');
+      return null;
+    }
   } catch (error) {
-    console.warn('[Redis] Failed to initialize:', error.code || error.name, '-', error.message);
-    console.warn('[Redis] Cache layer disabled - will continue without caching');
-    isConnected = false;
+    console.warn(`[Redis] Failed to initialize: ${error.message}`);
+    console.warn('[Redis] Cache layer disabled - app will continue without caching');
     return null;
   }
 }
