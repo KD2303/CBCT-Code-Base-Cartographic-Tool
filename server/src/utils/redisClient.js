@@ -7,7 +7,7 @@
  * - Non-blocking: degrades gracefully if Redis unavailable
  */
 
-import redis from 'redis';
+const redis = require('redis');
 
 let redisClient = null;
 let isConnected = false;
@@ -21,7 +21,7 @@ let isConnected = false;
  * - Upstash: rediss://default:password@host:port (TLS enabled)
  * - Custom: Via REDIS_URL environment variable
  */
-export async function initRedis() {
+async function initRedis() {
   if (redisClient && isConnected) {
     return redisClient;
   }
@@ -74,21 +74,21 @@ export async function initRedis() {
 /**
  * Get Redis client instance
  */
-export function getRedisClient() {
+function getRedisClient() {
   return redisClient;
 }
 
 /**
  * Check if Redis is connected and available
  */
-export function isRedisConnected() {
+function isRedisConnected() {
   return isConnected && redisClient !== null;
 }
 
 /**
  * Gracefully disconnect Redis
  */
-export async function disconnectRedis() {
+async function disconnectRedis() {
   if (redisClient && isConnected) {
     try {
       await redisClient.quit();
@@ -110,3 +110,10 @@ process.on('SIGTERM', async () => {
   await disconnectRedis();
   process.exit(0);
 });
+
+module.exports = {
+  initRedis,
+  getRedisClient,
+  isRedisConnected,
+  disconnectRedis
+};
