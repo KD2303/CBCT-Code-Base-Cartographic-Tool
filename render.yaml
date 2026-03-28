@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: cbct-server
+    env: node
+    plan: free
+    
+    # Build Configuration
+    # Install dependencies with devDependencies for all workspaces, then build server only
+    buildCommand: npm install && npm run build:server
+    startCommand: npm run start
+    
+    # Health Check
+    healthCheckPath: /api/health
+    healthCheckInterval: 10
+    healthCheckTimeout: 5
+    
+    # Environment Variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: REDIS_URL
+        scope: PROJECT
+      - key: CORS_ORIGIN
+        scope: PROJECT
+    
+    # Auto-deploy on push to main
+    autoDeployOnPush: true
+
